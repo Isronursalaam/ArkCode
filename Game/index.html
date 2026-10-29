@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ENDFIELD // BACKROOMS — Chen Quanyi & Laevatein</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600;700&family=Oswald:wght@500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="./style.css">
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+</head>
+<body>
+    <!-- 3D WebGL Canvas Container -->
+    <div id="canvas-container"></div>
+
+    <!-- Subtle Vignette Overlay -->
+    <div id="fx-overlay"></div>
+
+    <!-- Loading Screen -->
+    <div id="loading-screen">
+        <div class="loader-box">
+            <div class="loader-tag">ENDFIELD INDUSTRIES // LIMINAL SECTOR</div>
+            <h1 class="loader-title">BACKROOMS <span>LEVEL 1</span></h1>
+            <p class="loader-subtitle" id="loading-status">Menginisialisasi environment &amp; model operator...</p>
+            <div class="progress-track">
+                <div class="progress-fill" id="loading-bar"></div>
+            </div>
+            <div class="loader-meta">
+                <span id="loading-percent">0%</span>
+                <span>CHEN QUANYI &amp; LAEVATEIN</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== CLEAN IN-GAME FIELD HUD ==================== -->
+    <div id="field-hud">
+        <!-- Top Right Only: Quick Squad Switch + Character UI Button -->
+        <div class="hud-top-right">
+            <div class="squad-roster">
+                <div class="squad-pill active" id="squad-slot-chen" data-char="chen" title="Tekan [1] untuk ganti ke Chen Quanyi">
+                    <div class="squad-key">1</div>
+                    <div class="squad-avatar chen-bg">CQ</div>
+                    <div class="squad-meta">
+                        <div class="squad-name">CHEN QUANYI</div>
+                        <div class="squad-sub">GUARD // SWORD</div>
+                    </div>
+                </div>
+                <div class="squad-pill" id="squad-slot-laevat" data-char="laevatein" title="Tekan [2] untuk ganti ke Laevatein">
+                    <div class="squad-key">2</div>
+                    <div class="squad-avatar laev-bg">LV</div>
+                    <div class="squad-meta">
+                        <div class="squad-name">LAEVATEIN</div>
+                        <div class="squad-sub">STRIKER // FLAME</div>
+                    </div>
+                </div>
+            </div>
+
+            <button id="btn-open-char-ui" class="tactical-btn">
+                <span class="btn-icon">&#9881;</span>
+                <span class="btn-text">GANTI KARAKTER (UI)</span>
+                <span class="btn-hotkey">[C]</span>
+            </button>
+        </div>
+
+        <!-- Subtle Center Crosshair Dot -->
+        <div id="reticle">
+            <div class="reticle-dot"></div>
+        </div>
+
+        <!-- Combo Counter Indicator (only appears briefly during attacks) -->
+        <div id="combo-display" class="hidden">
+            <div class="combo-count" id="combo-number">1</div>
+            <div class="combo-label">COMBO</div>
+            <div class="combo-anim-tag" id="combo-anim-tag">ATTACK 01</div>
+        </div>
+
+        <!-- Bottom Right Only: Action Bar -->
+        <div class="hud-bottom-right">
+            <div class="action-bar">
+                <div class="action-slot" id="slot-lmb">
+                    <div class="slot-icon">&#9876;</div>
+                    <div class="slot-name">ATTACK</div>
+                    <div class="slot-key">KLIK KIRI</div>
+                </div>
+                <div class="action-slot" id="slot-rmb">
+                    <div class="slot-icon">&#10148;</div>
+                    <div class="slot-name">DASH</div>
+                    <div class="slot-key">KLIK KANAN</div>
+                </div>
+                <div class="action-slot" id="slot-skill">
+                    <div class="slot-icon">&#10022;</div>
+                    <div class="slot-name">SKILL</div>
+                    <div class="slot-key">E</div>
+                </div>
+                <div class="action-slot" id="slot-combo">
+                    <div class="slot-icon">&#9889;</div>
+                    <div class="slot-name">COMBO</div>
+                    <div class="slot-key">F</div>
+                </div>
+                <div class="action-slot ult-slot" id="slot-ult">
+                    <div class="slot-icon">&#9733;</div>
+                    <div class="slot-name">ULTIMATE</div>
+                    <div class="slot-key">Q</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== 3D CHARACTER SWITCH & SHOWCASE UI (C KEY) ==================== -->
+    <div id="char-ui-modal" class="hidden">
+        <!-- Left Column: Character Selector + Pose/UI Animation Selector -->
+        <div class="char-ui-left">
+            <div class="ui-brand-header">
+                <div class="ui-brand-sub">ENDFIELD // OPERATOR TERMINAL</div>
+                <div class="ui-brand-title">PILIH KARAKTER</div>
+            </div>
+
+            <div class="char-select-list">
+                <div class="char-select-card active" id="ui-card-chen" data-char="chen">
+                    <div class="char-card-indicator"></div>
+                    <div class="char-card-avatar chen-bg">CQ</div>
+                    <div class="char-card-info">
+                        <div class="char-card-id">CHR_0005_CHEN</div>
+                        <div class="char-card-name">CHEN QUANYI</div>
+                        <div class="char-card-role">Guard &bull; Sword Arts</div>
+                    </div>
+                    <div class="char-card-status" id="badge-deployed-chen">ACTIVE</div>
+                </div>
+
+                <div class="char-select-card" id="ui-card-laevat" data-char="laevatein">
+                    <div class="char-card-indicator"></div>
+                    <div class="char-card-avatar laev-bg">LV</div>
+                    <div class="char-card-info">
+                        <div class="char-card-id">CHR_0016_LAEVAT</div>
+                        <div class="char-card-name">LAEVATEIN</div>
+                        <div class="char-card-role">Striker &bull; Molten Greatsword</div>
+                    </div>
+                    <div class="char-card-status" id="badge-deployed-laevat">STANDBY</div>
+                </div>
+            </div>
+
+            <!-- UI Animation Pose Tabs -->
+            <div class="ui-pose-section">
+                <div class="ui-section-title">// ANIMASI UI KARAKTER</div>
+                <div class="ui-pose-tabs">
+                    <button class="pose-tab active" data-pose="overview">
+                        <span class="pose-idx">01</span>
+                        <span class="pose-label">OVERVIEW (ENTRY + IDLE)</span>
+                    </button>
+                    <button class="pose-tab" data-pose="weapon">
+                        <span class="pose-idx">02</span>
+                        <span class="pose-label">WEAPON SHOWCASE</span>
+                    </button>
+                    <button class="pose-tab" data-pose="equip">
+                        <span class="pose-idx">03</span>
+                        <span class="pose-label">EQUIPMENT STANCE</span>
+                    </button>
+                    <button class="pose-tab" data-pose="skill">
+                        <span class="pose-idx">04</span>
+                        <span class="pose-label">SKILL POSTURE</span>
+                    </button>
+                    <button class="pose-tab" data-pose="relax">
+                        <span class="pose-idx">05</span>
+                        <span class="pose-label">RELAX / IDLE LOOP</span>
+                    </button>
+                    <button class="pose-tab" data-pose="team">
+                        <span class="pose-idx">06</span>
+                        <span class="pose-label">SQUAD STANDBY</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="ui-drag-hint">
+                <span>&#9758; Geser (Drag) karakter di tengah layar untuk memutar tampilan 360&deg;</span>
+            </div>
+        </div>
+
+        <!-- Center Interactive Area (allows dragging the 3D character) -->
+        <div class="char-ui-center" id="char-ui-drag-zone">
+            <div class="ui-anim-playing-pill">
+                <span class="anim-dot"></span>
+                <span>ANIMASI UI: </span>
+                <strong id="ui-current-clip-name">A_actor_chen_ui_overview_start</strong>
+            </div>
+        </div>
+
+        <!-- Right Column: Operator Dossier & Deploy Button -->
+        <div class="char-ui-right">
+            <button id="btn-close-char-ui" class="ui-close-btn" title="Kembali ke Game [C / ESC]">
+                <span>KEMBALI KE GAME</span>
+                <kbd>ESC / C</kbd>
+            </button>
+
+            <div class="dossier-card">
+                <div class="dossier-tag" id="ui-dossier-id">OPERATOR FILE // CHR_0005_CHEN</div>
+                <h2 class="dossier-name" id="ui-dossier-name">CHEN QUANYI</h2>
+                <div class="dossier-faction" id="ui-dossier-faction">ENDFIELD INDUSTRIES // SPECIALIST</div>
+
+                <p class="dossier-desc" id="ui-dossier-desc">
+                    Pendekar pedang gesit dengan rangkaian kombo 5-tebasan cepat dan kemampuan Dash Attack kilat.
+                </p>
+
+                <div class="dossier-stats">
+                    <div class="d-stat">
+                        <span class="d-stat-k">SENJATA</span>
+                        <span class="d-stat-v" id="ui-stat-weapon">Aspirant Sword (0015)</span>
+                    </div>
+                    <div class="d-stat">
+                        <span class="d-stat-k">COMBO KLIK KIRI</span>
+                        <span class="d-stat-v" id="ui-stat-combo">5-Hit Rapid Slash + Dash Attack</span>
+                    </div>
+                    <div class="d-stat">
+                        <span class="d-stat-k">DASH KLIK KANAN</span>
+                        <span class="d-stat-v" id="ui-stat-dash">Forward Tactical Dash</span>
+                    </div>
+                    <div class="d-stat">
+                        <span class="d-stat-k">TOTAL ANIMASI</span>
+                        <span class="d-stat-v" id="ui-stat-anims">33 Core + 539 Archive Clips</span>
+                    </div>
+                </div>
+
+                <!-- Action Preview Buttons in UI -->
+                <div class="ui-combat-preview">
+                    <div class="ui-section-title">// TES ANIMASI SERANGAN DI UI</div>
+                    <div class="preview-btn-grid">
+                        <button class="preview-anim-btn" data-preview="attack_1">Attack 01</button>
+                        <button class="preview-anim-btn" data-preview="attack_3">Attack 03</button>
+                        <button class="preview-anim-btn" data-preview="attack_5">Attack 05</button>
+                        <button class="preview-anim-btn" data-preview="dash_attack">Dash Attack</button>
+                        <button class="preview-anim-btn" data-preview="skill">Normal Skill</button>
+                        <button class="preview-anim-btn" data-preview="ult">Ultimate</button>
+                    </div>
+                </div>
+
+                <button id="btn-deploy-char" class="deploy-btn">
+                    <span class="deploy-main">GUNAKAN OPERATOR INI</span>
+                    <span class="deploy-sub">KONFIRMASI &amp; BERMAIN [ENTER]</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="./game.js"></script>
+</body>
+</html>
