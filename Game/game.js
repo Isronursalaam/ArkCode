@@ -18,7 +18,7 @@ const CHARACTER_CONFIGS = {
         desc: 'Pendekar pedang gesit dengan rangkaian kombo 5-tebasan cepat dan kemampuan Dash Attack kilat. Sangat efektif bermanuver di lorong-lorong Backrooms Level 1.',
         accentColor: '#00e5ff',
         scale: 0.62,
-        urls: ['./assets/Chen/chen.glb?v=2', '../Chen/chen.glb?v=2'],
+        urls: ['./assets/Chen/chen.glb?v=4', '../Chen/chen.glb?v=4'],
         animMap: {
             // Locomotion
             idle: 'A_actor_chen_battle_loop',
@@ -66,12 +66,12 @@ const CHARACTER_CONFIGS = {
         weaponName: 'LAEVATEIN CLAYMORE (wpn_claym_0006)',
         shortWeapon: 'Molten Claymore (0006)',
         comboDesc: '5-Hit Molten Greatsword Cleave + Dash Attack',
-        dashDesc: 'Forward Flame Sprint Dash',
+        dashDesc: 'High-Speed Flame Evade Dash',
         totalAnimsText: '37 Core + 412 Archive Clips',
         desc: 'Operator berelemen api dengan pedang besar Laevatein. Setiap tebasan menghasilkan ayunan pedang besar yang kuat di lorong Backrooms.',
         accentColor: '#ff5522',
         scale: 0.62,
-        urls: ['./assets/laevatein/laevatein.glb?v=2', '../laevatein/laevatein.glb?v=2'],
+        urls: ['./assets/laevatein/laevatein.glb?v=4', '../laevatein/laevatein.glb?v=4'],
         animMap: {
             // Locomotion (uses A_actor_lady_* inside laevatein.glb)
             idle: 'A_actor_laevat_battle_loop',
@@ -82,9 +82,9 @@ const CHARACTER_CONFIGS = {
             jump_start: 'A_actor_lady_idle_jump_start_l',
             fall_loop: 'A_actor_lady_fall_loop_l',
             jump_land: 'A_actor_lady_idle_jump_land_l',
-            // Smooth Forward Dash
+            // Forward Sprint Dash (Same style as Chen Quanyi)
             dash: 'A_actor_lady_sprint_dash_l',
-            dodge_b: 'A_actor_lady_battle_dodge_b_l_01',
+            dodge_b: 'A_actor_laevat_battle_dodge_b_l',
             // Combat
             battle_idle: 'A_actor_laevat_battle_loop',
             attack_1: 'A_actor_laevat_battle_attack_01',
@@ -280,19 +280,19 @@ renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.1;
+renderer.toneMappingExposure = 1.0;
 container.appendChild(renderer.domElement);
 
-// Warm Ambient + Hemisphere lighting for Backrooms Level 1
-const ambientLight = new THREE.AmbientLight(0xfff8e7, 1.15);
+// Warm Ambient + Hemisphere lighting tuned for vibrant Anime character colors
+const ambientLight = new THREE.AmbientLight(0xfff0db, 0.82);
 scene.add(ambientLight);
 
-const hemiLight = new THREE.HemisphereLight(0xfff6d6, 0x4a4025, 1.1);
+const hemiLight = new THREE.HemisphereLight(0xffeed5, 0x3d3522, 0.72);
 hemiLight.position.set(0, 5, 0);
 scene.add(hemiLight);
 
 // Main shadow-casting light that follows the player inside the Backrooms
-const playerKeyLight = new THREE.DirectionalLight(0xfff2c2, 1.25);
+const playerKeyLight = new THREE.DirectionalLight(0xfff3e6, 1.25);
 playerKeyLight.castShadow = true;
 playerKeyLight.shadow.mapSize.width = 2048;
 playerKeyLight.shadow.mapSize.height = 2048;
@@ -554,8 +554,9 @@ function applyAnimeMaterialFixes(mesh) {
         }
 
         // Convert to crisp Anime NPR shading:
-        // Use flat, high-roughness diffuse + strong self-illumination from the base texture
-        // so skin, face, eyes, hair, and outfit look vibrant and cel-shaded in the Backrooms.
+        // Use soft, high-roughness diffuse with gentle ambient fill so
+        // skin, face, eyes, hair, and outfit retain their true, rich anime colors
+        // without getting pale, washed-out, or overexposed.
         const isFaceOrEye = (
             matName.includes('face') ||
             matName.includes('iris') ||
@@ -566,7 +567,8 @@ function applyAnimeMaterialFixes(mesh) {
         const isBrow = matName.includes('brow');
         const isCutoutCloth = matName.includes('cloth') || matName.includes('skirt') || matName.includes('plush');
 
-        mat.roughness = 0.92;
+        mat.color.setHex(0xffffff);
+        mat.roughness = 0.86;
         mat.metalness = 0.0;
         mat.side = THREE.DoubleSide;
 
@@ -574,7 +576,9 @@ function applyAnimeMaterialFixes(mesh) {
             mat.map.colorSpace = THREE.SRGBColorSpace;
             mat.emissive = new THREE.Color(0xffffff);
             mat.emissiveMap = mat.map;
-            mat.emissiveIntensity = isFaceOrEye ? 0.78 : 0.65;
+            // Gentle ambient lift so shadows never turn pitch black,
+            // while preserving the true warm peach skin, teal coat, and rich hair.
+            mat.emissiveIntensity = isFaceOrEye ? 0.14 : 0.06;
         }
 
         if (isBrow) {
@@ -914,8 +918,8 @@ function handleAttackInput() {
             playerState.actionTimer = 0;
             playerState.actionDuration = clipDur * 0.80;
 
-            playerState.vel.x = Math.sin(playerState.facingAngle) * 4.2;
-            playerState.vel.z = Math.cos(playerState.facingAngle) * 4.2;
+            playerState.vel.x = Math.sin(playerState.facingAngle) * 6.8;
+            playerState.vel.z = Math.cos(playerState.facingAngle) * 6.8;
 
             sfx.playSlash(3, true);
             showComboPopup('DASH', 'DASH ATTACK');
@@ -972,7 +976,7 @@ function executeNextComboAttack() {
     showComboPopup(step, `ATTACK 0${step}`);
 }
 
-// RIGHT CLICK -> Clean Forward Dash (No exploding particles)
+// RIGHT CLICK -> High-Speed Tactical Dash (Longer distance, smooth & crisp)
 function handleDashInput() {
     if (camState.isUIMode) return;
 
@@ -990,14 +994,17 @@ function handleDashInput() {
     playerState.mode = 'dash';
     playerState.comboQueued = false;
 
-    const dashSpeed = 6.2;
+    // High initial burst speed for a far, responsive 5-meter dash
+    const dashSpeed = 13.5;
     playerState.vel.x = Math.sin(playerState.facingAngle) * dashSpeed;
     playerState.vel.z = Math.cos(playerState.facingAngle) * dashSpeed;
 
-    const act = switchAnimation('dash', { fadeDuration: 0.06, timeScale: 1.15, forceRestart: true });
-    const rawDur = act ? act.getClip().duration / 1.15 : 0.45;
+    // Fast sprint dash animation execution for both Chen and Laevatein
+    const animSpeed = 1.75;
+    const act = switchAnimation('dash', { fadeDuration: 0.05, timeScale: animSpeed, forceRestart: true });
+    const rawDur = act ? act.getClip().duration / animSpeed : 0.50;
     playerState.actionTimer = 0;
-    playerState.actionDuration = Math.min(0.42, rawDur * 0.78);
+    playerState.actionDuration = Math.min(0.50, rawDur * 0.90);
 
     sfx.playDash();
 }
@@ -1141,8 +1148,8 @@ function updatePlayerPhysics(dt) {
     if (playerState.mode === 'dash' || playerState.mode === 'attack' || playerState.mode === 'skill') {
         playerState.actionTimer += dt;
 
-        // Apply friction to horizontal impulse velocity
-        const friction = playerState.mode === 'dash' ? 7.5 : 10.5;
+        // Apply friction to horizontal impulse velocity (low friction during dash so it travels farther)
+        const friction = playerState.mode === 'dash' ? 2.8 : 10.5;
         playerState.vel.x -= playerState.vel.x * Math.min(1, friction * dt);
         playerState.vel.z -= playerState.vel.z * Math.min(1, friction * dt);
 
@@ -1163,6 +1170,13 @@ function updatePlayerPhysics(dt) {
                 return;
             }
             playerState.mode = 'locomotion';
+            if (!inputDir) {
+                playerState.vel.x *= 0.15;
+                playerState.vel.z *= 0.15;
+                switchAnimation('idle', { fadeDuration: 0.18 });
+            } else {
+                switchAnimation(keys.shift ? 'sprint' : 'run', { fadeDuration: 0.15 });
+            }
         } else {
             return;
         }
